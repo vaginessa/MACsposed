@@ -2,7 +2,7 @@ package com.berdik.macsposed
 
 import com.berdik.macsposed.hookers.SystemUIHooker
 import com.berdik.macsposed.hookers.WifiServiceHooker
-import com.github.kyuubiran.ezxhelper.init.EzXHelperInit
+import com.github.kyuubiran.ezxhelper.EzXHelper
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.IXposedHookZygoteInit
 import de.robv.android.xposed.XSharedPreferences
@@ -11,14 +11,14 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 
 class MACsposed : IXposedHookZygoteInit, IXposedHookLoadPackage {
     override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam) {
-        EzXHelperInit.initZygote(startupParam)
+        EzXHelper.initZygote(startupParam)
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
         if (lpparam != null) {
-            EzXHelperInit.initHandleLoadPackage(lpparam)
-            EzXHelperInit.setLogTag("MACsposed")
-            EzXHelperInit.setToastTag("MACsposed")
+            EzXHelper.initHandleLoadPackage(lpparam)
+            EzXHelper.setLogTag("MACsposed")
+            EzXHelper.setToastTag("MACsposed")
             
             when (lpparam.packageName) {
                 "android" -> {
