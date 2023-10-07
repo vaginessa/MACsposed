@@ -2,34 +2,42 @@ package com.berdik.macsposed
 
 import com.berdik.macsposed.hookers.SystemUIHooker
 import com.berdik.macsposed.hookers.WifiServiceHooker
-import com.github.kyuubiran.ezxhelper.init.EzXHelperInit
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.IXposedHookZygoteInit
-import de.robv.android.xposed.XSharedPreferences
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.libxposed.api.XposedInterface
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 
-class MACsposed : IXposedHookZygoteInit, IXposedHookLoadPackage {
-    override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam) {
-        EzXHelperInit.initZygote(startupParam)
+private lateinit var module: MACsposed
+
+class MACsposed(base: XposedInterface, param: ModuleLoadedParam) : XposedModule(base, param) {
+    init {
+        module = this
     }
 
-    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
-        if (lpparam != null) {
-            EzXHelperInit.initHandleLoadPackage(lpparam)
-            EzXHelperInit.setLogTag("MACsposed")
-            EzXHelperInit.setToastTag("MACsposed")
-            
-            when (lpparam.packageName) {
+    override fun onPackageLoaded(param: PackageLoadedParam) {
+        super.onPackageLoaded(param)
+
+        if (param != null) {
+            module.log("[MACsposed] SAW ${param.packageName}")
+
+            when (param.packageName) {
                 "android" -> {
                     try {
-                        WifiServiceHooker.hook(lpparam)
+                        WifiServiceHooker.hook(param, module)
                     } catch (e: Exception) {
-                        XposedBridge.log("[MACsposed] ERROR: $e")
+                        module.log("[MACsposed] ERROR: $e")
                     }
                 }
-            }
 
+                "com.android.systemui" -> {
+                    // TODO: Add logic for hooking the system UI.
+                }
+            }
+        }
+    }
+
+    /*override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
+        if (lpparam != null) {
             when (lpparam.packageName) {
                 "com.android.systemui" -> {
                     val prefs = XSharedPreferences(BuildConfig.APPLICATION_ID, BuildConfig.APPLICATION_ID)
@@ -44,5 +52,5 @@ class MACsposed : IXposedHookZygoteInit, IXposedHookLoadPackage {
                 }
             }
         }
-    }
+    }*/
 }

@@ -1,19 +1,13 @@
 package com.berdik.macsposed.hookers
 
-import android.annotation.SuppressLint
-import android.util.ArraySet
 import com.berdik.macsposed.BuildConfig
-import com.github.kyuubiran.ezxhelper.utils.*
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage
 
 class SystemUIHooker {
     companion object {
         private const val tileId = "custom(${BuildConfig.APPLICATION_ID}/.QuickTile)"
         private var tileRevealed = false
 
-        @SuppressLint("PrivateApi")
+        /*@SuppressLint("PrivateApi")
         fun hook(lpparam: XC_LoadPackage.LoadPackageParam) {
             findAllMethods(lpparam.classLoader.loadClass("com.android.systemui.qs.QSPanelControllerBase")) {
                 name == "setTiles" && isPublic && paramCount == 0
@@ -64,6 +58,6 @@ class SystemUIHooker {
                     }
                 }
             }
-        }
+        }*/
     }
 }

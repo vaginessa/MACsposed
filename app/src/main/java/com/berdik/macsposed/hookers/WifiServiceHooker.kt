@@ -1,14 +1,68 @@
 package com.berdik.macsposed.hookers
 
 import android.annotation.SuppressLint
-import com.berdik.macsposed.BuildConfig
-import com.github.kyuubiran.ezxhelper.utils.*
+import android.app.Application
+import android.content.Context
 import dalvik.system.PathClassLoader
-import de.robv.android.xposed.XSharedPreferences
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.libxposed.api.XposedInterface
+import io.github.libxposed.api.XposedInterface.AfterHookCallback
+import io.github.libxposed.api.XposedInterface.BeforeHookCallback
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
+import io.github.libxposed.api.annotations.AfterInvocation
+import io.github.libxposed.api.annotations.BeforeInvocation
+import io.github.libxposed.api.annotations.XposedHooker
 
+@XposedHooker
 class WifiServiceHooker {
+    companion object {
+        var module: XposedModule? = null
+
+        @SuppressLint("PrivateApi")
+        fun hook(param: PackageLoadedParam, module: XposedModule) {
+            this.module = module
+            val loadClassFromLoaderMethod = Application::class.java.getDeclaredMethod("loadClassFromLoader",
+                param.classLoader.loadClass("com.android.server.SystemServiceManager"))
+            module.hook(loadClassFromLoaderMethod, SystemServiceManagerHooker::class.java)
+        }
+
+        @XposedHooker
+        private class SystemServiceManagerHooker : XposedInterface.Hooker {
+            companion object {
+                @JvmStatic
+                @AfterInvocation
+                fun afterInvocation(callback: AfterHookCallback, context: SystemServiceManagerHooker) {
+                    if (callback.args[0] == "com.android.server.wifi.WifiService") {
+                        val wifiServiceClassLoader = callback.args[1] as PathClassLoader
+                        val wifiVendorHalClassLoader =  wifiServiceClassLoader
+                            .loadClass("com.android.server.wifi.WifiVendorHal")
+
+                        val setStaMacAddressMethod = Application::class.java.getDeclaredMethod("setStaMacAddress", wifiVendorHalClassLoader)
+                        val setApMacAddressMethod = Application::class.java.getDeclaredMethod("setApMacAddress", wifiVendorHalClassLoader)
+
+                        module?.hook(setStaMacAddressMethod, MacAddrSetGenericHooker::class.java)
+                        module?.hook(setApMacAddressMethod, MacAddrSetGenericHooker::class.java)
+                    }
+                }
+            }
+        }
+
+        @XposedHooker
+        private class MacAddrSetGenericHooker : XposedInterface.Hooker {
+            companion object {
+                @JvmStatic
+                @BeforeInvocation
+                fun beforeInvocation(callback: BeforeHookCallback): MacAddrSetGenericHooker {
+                    module?.log("BLOCKED BLOCKED BLOCKED BLOCKED")
+                    callback.returnAndSkip(true)
+                    return MacAddrSetGenericHooker()
+                }
+            }
+        }
+    }
+}
+
+/*class WifiServiceHooker {
     companion object {
         @SuppressLint("PrivateApi")
         fun hook(lpparam: XC_LoadPackage.LoadPackageParam) {
@@ -58,4 +112,4 @@ class WifiServiceHooker {
             }
         }
     }
-}
+}*/
