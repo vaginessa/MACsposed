@@ -1,5 +1,6 @@
 package com.berdik.macsposed
 
+import com.berdik.macsposed.hookers.SelfHooker
 import com.berdik.macsposed.hookers.SystemUIHooker
 import com.berdik.macsposed.hookers.WifiServiceHooker
 import com.github.kyuubiran.ezxhelper.init.EzXHelperInit
@@ -28,9 +29,7 @@ class MACsposed : IXposedHookZygoteInit, IXposedHookLoadPackage {
                         XposedBridge.log("[MACsposed] ERROR: $e")
                     }
                 }
-            }
 
-            when (lpparam.packageName) {
                 "com.android.systemui" -> {
                     val prefs = XSharedPreferences(BuildConfig.APPLICATION_ID, BuildConfig.APPLICATION_ID)
                     if (!prefs.getBoolean("tileRevealDone", false)) {
@@ -40,6 +39,23 @@ class MACsposed : IXposedHookZygoteInit, IXposedHookLoadPackage {
                         } catch (e: Exception) {
                             XposedBridge.log("[MACsposed] ERROR: $e")
                         }
+                    }
+                }
+
+                BuildConfig.APPLICATION_ID -> {
+                    /* Temporary for figuring out where to place the hook. This should be removed later.
+
+                    val methods = lpparam.classLoader.loadClass("com.berdik.macsposed.XposedChecker\$Companion").declaredMethods
+                    XposedBridge.log("[MACsposed] ${methods.size} METHODS FOUND!")
+                    for (method in methods) {
+                        XposedBridge.log("[MACsposed] ${method}")
+                    }*/
+
+                    try {
+                        XposedBridge.log("[MACsposed] Hooking self to determine if module is active.")
+                        SelfHooker.hook(lpparam)
+                    } catch (e: Exception) {
+                        XposedBridge.log("[MACsposed] ERROR: $e")
                     }
                 }
             }
