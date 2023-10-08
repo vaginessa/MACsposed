@@ -19,7 +19,6 @@ class SelfHooker {
                 name == "isEnabled"
             }.hookMethod {
                 before { param ->
-                    XposedBridge.log("[MACsposed] Module self-injection successful! Returning true.")
                     param.result = true
                 }
             }

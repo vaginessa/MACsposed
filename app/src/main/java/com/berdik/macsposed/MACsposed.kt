@@ -43,14 +43,6 @@ class MACsposed : IXposedHookZygoteInit, IXposedHookLoadPackage {
                 }
 
                 BuildConfig.APPLICATION_ID -> {
-                    /* Temporary for figuring out where to place the hook. This should be removed later.
-
-                    val methods = lpparam.classLoader.loadClass("com.berdik.macsposed.XposedChecker\$Companion").declaredMethods
-                    XposedBridge.log("[MACsposed] ${methods.size} METHODS FOUND!")
-                    for (method in methods) {
-                        XposedBridge.log("[MACsposed] ${method}")
-                    }*/
-
                     try {
                         XposedBridge.log("[MACsposed] Hooking self to determine if module is active.")
                         SelfHooker.hook(lpparam)
