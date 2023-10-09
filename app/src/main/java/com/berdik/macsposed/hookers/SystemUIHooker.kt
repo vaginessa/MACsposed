@@ -1,11 +1,18 @@
 package com.berdik.macsposed.hookers
 
 import com.berdik.macsposed.BuildConfig
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 
 class SystemUIHooker {
     companion object {
         private const val tileId = "custom(${BuildConfig.APPLICATION_ID}/.QuickTile)"
         private var tileRevealed = false
+
+        fun hook(param: PackageLoadedParam, module: XposedModule) {
+            // TODO: Finish implementing System UI hooker.
+        }
 
         /*@SuppressLint("PrivateApi")
         fun hook(lpparam: XC_LoadPackage.LoadPackageParam) {
