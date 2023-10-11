@@ -10,7 +10,6 @@ class PrefManager {
     companion object {
         private var prefs: SharedPreferences? = null
         private var hookActive: Boolean? = null
-        private var noXposed = false
 
         // Since we are an Xposed module, we don't care about MODE_WORLD_READABLE being deprecated.
         // In fact, we need to use despite being deprecated because without it, the Xposed hooking
@@ -25,15 +24,13 @@ class PrefManager {
                         Context.MODE_WORLD_READABLE
                     )
                 }
-            } catch (e: SecurityException) {
-                noXposed = true
-            }
+            } catch (e: SecurityException) {}
             markTileRevealAsDone()
             toggleModuleIcon(context)
         }
 
         fun isHookOn(): Boolean {
-            if (noXposed) {
+            if (!XposedChecker.isEnabled()) {
                 return false
             }
 
@@ -44,7 +41,7 @@ class PrefManager {
         }
 
         fun toggleHookState() {
-            if (!noXposed) {
+            if (XposedChecker.isEnabled()) {
                 hookActive = !isHookOn()
                 val prefEdit = prefs!!.edit()
                 prefEdit.putBoolean("hookActive", hookActive!!)
@@ -53,7 +50,7 @@ class PrefManager {
         }
 
         private fun markTileRevealAsDone() {
-            if (!noXposed) {
+            if (XposedChecker.isEnabled()) {
                 val prefEdit = prefs!!.edit()
                 prefEdit.putBoolean("tileRevealDone", true)
                 prefEdit.apply()
@@ -64,7 +61,7 @@ class PrefManager {
             // Assume that the state to set is disabling the icon, and flip it to enabling the
             // icon if no Xposed is detected.
             var stateToSet = PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            if (noXposed) {
+            if (!XposedChecker.isEnabled()) {
                 stateToSet = PackageManager.COMPONENT_ENABLED_STATE_ENABLED
             }
 
