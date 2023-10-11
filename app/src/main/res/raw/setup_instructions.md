@@ -6,7 +6,7 @@ MACsposed is designed for rooted phones running Xposed on Android 12 through 14.
 
 ### To use MACsposed:
 <ol>
-    <li>Install LSposed. This requires your device to be rooted with Magisk. Installation instructions for LSPosed are available [here](https://github.com/LSPosed/LSPosed#install).</li>
+    <li>Install LSposed. This requires your device to be rooted with Magisk or KernelSU. Installation instructions for LSPosed are available [here](https://github.com/LSPosed/LSPosed#install).</li>
     <li>Install MACsposed.</li>
     <li>Activate the MACsposed module in the LSposed user interface.</li>
 </ol>

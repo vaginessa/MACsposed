@@ -18,7 +18,7 @@ Historically, setting a custom MAC address on Android was very easy for rooted u
 </p>
 
 To use MACsposed:
-1. Install LSposed. This requires your device to be rooted with Magisk. Installation instructions for LSPosed are available [here](https://github.com/LSPosed/LSPosed#install).
+1. Install LSposed. This requires your device to be rooted with Magisk or KernelSU. Installation instructions for LSPosed are available [here](https://github.com/LSPosed/LSPosed#install).
 2. Install MACsposed.
 3. Activate the MACsposed module in the LSposed user interface.
 
