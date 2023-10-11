@@ -1,9 +1,11 @@
-package com.berdik.macsposed
+package com.berdik.macsposed.utils
 
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import com.berdik.macsposed.BuildConfig
+import com.berdik.macsposed.InstructionsActivity
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
 

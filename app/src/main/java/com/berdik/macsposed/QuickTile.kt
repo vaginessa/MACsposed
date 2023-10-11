@@ -2,6 +2,7 @@ package com.berdik.macsposed
 
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
+import com.berdik.macsposed.utils.PrefManager
 
 class QuickTile: TileService() {
     override fun onStartListening() {

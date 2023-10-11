@@ -68,7 +68,7 @@ class WifiServiceHooker {
                 @BeforeInvocation
                 fun beforeInvocation(callback: BeforeHookCallback): MacAddrSetGenericHooker {
                     val prefs = module?.getRemotePreferences(BuildConfig.APPLICATION_ID)
-                    var isHookActive = prefs?.getBoolean("hookActive", false)
+                    val isHookActive = prefs?.getBoolean("hookActive", false)
 
                     if (isHookActive!!) {
                         module?.log("[MACsposed] Blocked MAC address change to ${callback.args[1]} on ${callback.args[0]}.")
@@ -80,7 +80,7 @@ class WifiServiceHooker {
 
                 @JvmStatic
                 @AfterInvocation
-                fun AfterInvocation(callback: AfterHookCallback, context: MacAddrSetGenericHooker) {
+                fun afterInvocation(callback: AfterHookCallback, context: MacAddrSetGenericHooker) {
                     if (!context.isHookActive) {
                         module?.log("[MACsposed] Allowed MAC address change to ${callback.args[1]} on ${callback.args[0]}.")
                     }

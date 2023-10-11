@@ -1,4 +1,4 @@
-package com.berdik.macsposed
+package com.berdik.macsposed.utils
 
 class XposedChecker {
     companion object {
