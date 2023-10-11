@@ -1,30 +1,28 @@
-package com.berdik.macsposed
+package com.berdik.macsposed.utils
 
-import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import com.berdik.macsposed.BuildConfig
+import com.berdik.macsposed.InstructionsActivity
+import io.github.libxposed.service.XposedService
+import io.github.libxposed.service.XposedServiceHelper
 
 class PrefManager {
     companion object {
         private var prefs: SharedPreferences? = null
         private var hookActive: Boolean? = null
 
-        // Since we are an Xposed module, we don't care about MODE_WORLD_READABLE being deprecated.
-        // In fact, we need to use despite being deprecated because without it, the Xposed hooking
-        // mechanism cannot access the preference value.
-        @SuppressLint("WorldReadableFiles")
-        @Suppress("DEPRECATION")
         fun loadPrefs(context: Context) {
-            try {
-                if (prefs == null) {
-                    prefs = context.getSharedPreferences(
-                        BuildConfig.APPLICATION_ID,
-                        Context.MODE_WORLD_READABLE
-                    )
+            XposedServiceHelper.registerListener(object : XposedServiceHelper.OnServiceListener {
+                override fun onServiceBind(service: XposedService) {
+                    XposedChecker.flagAsEnabled()
+                    prefs = service.getRemotePreferences(BuildConfig.APPLICATION_ID)
                 }
-            } catch (e: SecurityException) {}
+
+                override fun onServiceDied(service: XposedService) {}
+                })
             markTileRevealAsDone()
             toggleModuleIcon(context)
         }

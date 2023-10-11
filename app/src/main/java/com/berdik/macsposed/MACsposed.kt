@@ -1,53 +1,42 @@
 package com.berdik.macsposed
 
-import com.berdik.macsposed.hookers.SelfHooker
 import com.berdik.macsposed.hookers.SystemUIHooker
 import com.berdik.macsposed.hookers.WifiServiceHooker
-import com.github.kyuubiran.ezxhelper.EzXHelper
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.IXposedHookZygoteInit
-import de.robv.android.xposed.XSharedPreferences
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.libxposed.api.XposedInterface
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.SystemServerLoadedParam
 
-class MACsposed : IXposedHookZygoteInit, IXposedHookLoadPackage {
-    override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam) {
-        EzXHelper.initZygote(startupParam)
+private lateinit var module: MACsposed
+
+class MACsposed(base: XposedInterface, param: ModuleLoadedParam) : XposedModule(base, param) {
+    init {
+        module = this
     }
 
-    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
-        if (lpparam != null) {
-            EzXHelper.initHandleLoadPackage(lpparam)
-            EzXHelper.setLogTag("MACsposed")
-            EzXHelper.setToastTag("MACsposed")
-            
-            when (lpparam.packageName) {
-                "android" -> {
-                    try {
-                        WifiServiceHooker.hook(lpparam)
-                    } catch (e: Exception) {
-                        XposedBridge.log("[MACsposed] ERROR: $e")
-                    }
-                }
+    override fun onSystemServerLoaded(param: SystemServerLoadedParam) {
+        super.onSystemServerLoaded(param)
 
-                "com.android.systemui" -> {
-                    val prefs = XSharedPreferences(BuildConfig.APPLICATION_ID, BuildConfig.APPLICATION_ID)
-                    if (!prefs.getBoolean("tileRevealDone", false)) {
-                        try {
-                            XposedBridge.log("[MACsposed] Hooking System UI to add and reveal quick settings tile.")
-                            SystemUIHooker.hook(lpparam)
-                        } catch (e: Exception) {
-                            XposedBridge.log("[MACsposed] ERROR: $e")
-                        }
-                    }
-                }
+        try {
+            WifiServiceHooker.hook(param, module)
+        } catch (e: Exception) {
+            module.log("[MACsposed] ERROR: $e")
+        }
+    }
 
-                BuildConfig.APPLICATION_ID -> {
+    override fun onPackageLoaded(param: PackageLoadedParam) {
+        super.onPackageLoaded(param)
+
+        when (param.packageName) {
+            "com.android.systemui" -> {
+                val prefs = getRemotePreferences(BuildConfig.APPLICATION_ID)
+                if (!prefs.getBoolean("tileRevealDone", false)) {
                     try {
-                        XposedBridge.log("[MACsposed] Hooking self to determine if module is active.")
-                        SelfHooker.hook(lpparam)
+                        module.log("[MACsposed] Hooking System UI to add and reveal quick settings tile.")
+                        SystemUIHooker.hook(param, module)
                     } catch (e: Exception) {
-                        XposedBridge.log("[MACsposed] ERROR: $e")
+                        module.log("[MACsposed] ERROR: $e")
                     }
                 }
             }

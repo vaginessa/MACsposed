@@ -1,66 +1,91 @@
 package com.berdik.macsposed.hookers
 
 import android.annotation.SuppressLint
+import android.net.MacAddress
 import com.berdik.macsposed.BuildConfig
-import com.github.kyuubiran.ezxhelper.HookFactory.`-Static`.createHook
-import com.github.kyuubiran.ezxhelper.finders.MethodFinder
 import dalvik.system.PathClassLoader
-import de.robv.android.xposed.XSharedPreferences
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.callbacks.XC_LoadPackage
-import java.lang.reflect.Modifier
+import io.github.libxposed.api.XposedInterface
+import io.github.libxposed.api.XposedInterface.AfterHookCallback
+import io.github.libxposed.api.XposedInterface.BeforeHookCallback
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface.SystemServerLoadedParam
+import io.github.libxposed.api.annotations.AfterInvocation
+import io.github.libxposed.api.annotations.BeforeInvocation
+import io.github.libxposed.api.annotations.XposedHooker
 
+@XposedHooker
 class WifiServiceHooker {
     companion object {
-        @SuppressLint("PrivateApi")
-        fun hook(lpparam: XC_LoadPackage.LoadPackageParam) {
-            MethodFinder.fromClass(lpparam.classLoader.loadClass("com.android.server.SystemServiceManager"))
-                .filterByName("loadClassFromLoader")
-                .filterByModifiers(Modifier.STATIC)
-                .first()
-                .createHook {
-                    after { param ->
-                        if (param.args[0] == "com.android.server.wifi.WifiService") {
-                            hookMacAddrSet(param.args[1] as PathClassLoader)
-                        }
-                    }
-                }
-        }
+        var module: XposedModule? = null
 
         @SuppressLint("PrivateApi")
-        private fun hookMacAddrSet(classloader: PathClassLoader) {
-            val wifiVendorHalClass = classloader.loadClass("com.android.server.wifi.WifiVendorHal")
-            macAddrSetGenericHook(wifiVendorHalClass, "setStaMacAddress")
-            macAddrSetGenericHook(wifiVendorHalClass, "setApMacAddress")
+        fun hook(param: SystemServerLoadedParam, module: XposedModule) {
+            this.module = module
+            module.hook(
+                param.classLoader.loadClass("com.android.server.SystemServiceManager")
+                    .getDeclaredMethod("loadClassFromLoader", String::class.java, ClassLoader::class.java),
+                SystemServiceManagerHooker::class.java
+            )
         }
 
-        private fun macAddrSetGenericHook(wifiVendorHalClass: Class<*>, functionName: String) {
-            MethodFinder.fromClass(wifiVendorHalClass)
-                .filterByName(functionName)
-                .first()
-                .createHook {
-                    var isHookActive = false
-
-                    before { param ->
-                        // Get the active state of the hook.
-                        val prefs = XSharedPreferences(BuildConfig.APPLICATION_ID, BuildConfig.APPLICATION_ID)
-                        isHookActive = prefs.getBoolean("hookActive", false)
-
-                        // If the hook is active, log a block of the MAC address change and bypass the real function.
-                        if (isHookActive) {
-                            XposedBridge.log("[MACsposed] Blocked MAC address change to ${param.args[1]} on ${param.args[0]}.")
-                            param.result = true
-                        }
+        @XposedHooker
+        private class SystemServiceManagerHooker(private val wifiService: PathClassLoader?) : XposedInterface.Hooker {
+            companion object {
+                @JvmStatic
+                @BeforeInvocation
+                fun beforeInvocation(callback: BeforeHookCallback): SystemServiceManagerHooker {
+                    val className = callback.args[0] as String
+                    if (className == "com.android.server.wifi.WifiService") {
+                        val classLoader = callback.args[1] as PathClassLoader
+                        return SystemServiceManagerHooker(classLoader)
                     }
 
-                    after { param ->
-                        // If the hook is active and the result of the address change attempt was successful, make a log entry
-                        // after the real function executes indicating so.
-                        if (param.result as Boolean && !isHookActive) {
-                            XposedBridge.log("[MACsposed] Allowed MAC address change to ${param.args[1]} on ${param.args[0]}.")
-                        }
+                    return SystemServiceManagerHooker(null)
+                }
+
+                @SuppressLint("PrivateApi")
+                @JvmStatic
+                @AfterInvocation
+                fun afterInvocation(callback: AfterHookCallback, context: SystemServiceManagerHooker) {
+                    if (context.wifiService != null) {
+                        val wifiVendorHalClassLoader = context.wifiService.loadClass("com.android.server.wifi.WifiVendorHal")
+                        val setStaMacAddressMethod = wifiVendorHalClassLoader
+                            .getDeclaredMethod("setStaMacAddress", String::class.java, MacAddress::class.java)
+                        val setApMacAddressMethod = wifiVendorHalClassLoader
+                            .getDeclaredMethod("setApMacAddress", String::class.java, MacAddress::class.java)
+
+                        module?.hook(setStaMacAddressMethod, MacAddrSetGenericHooker::class.java)
+                        module?.hook(setApMacAddressMethod, MacAddrSetGenericHooker::class.java)
                     }
                 }
+            }
+        }
+
+        @XposedHooker
+        private class MacAddrSetGenericHooker(private val isHookActive: Boolean) : XposedInterface.Hooker {
+            companion object {
+                @JvmStatic
+                @BeforeInvocation
+                fun beforeInvocation(callback: BeforeHookCallback): MacAddrSetGenericHooker {
+                    val prefs = module?.getRemotePreferences(BuildConfig.APPLICATION_ID)
+                    val isHookActive = prefs?.getBoolean("hookActive", false)
+
+                    if (isHookActive!!) {
+                        module?.log("[MACsposed] Blocked MAC address change to ${callback.args[1]} on ${callback.args[0]}.")
+                        callback.returnAndSkip(true)
+                    }
+
+                    return MacAddrSetGenericHooker(isHookActive)
+                }
+
+                @JvmStatic
+                @AfterInvocation
+                fun afterInvocation(callback: AfterHookCallback, context: MacAddrSetGenericHooker) {
+                    if (!context.isHookActive) {
+                        module?.log("[MACsposed] Allowed MAC address change to ${callback.args[1]} on ${callback.args[0]}.")
+                    }
+                }
+            }
         }
     }
 }
